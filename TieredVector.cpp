@@ -2,7 +2,7 @@
 using namespace std;
 
 template <typename T>
-class veclist{
+class tiered_vector{
     private:
         T** pdata;
         T* internal_pdata[8];
@@ -43,9 +43,9 @@ class veclist{
         }
 
     public:
-        veclist() : pdata(nullptr), block_sz(0), block_cap(0), sz(0) {}
+        tiered_vector() : pdata(nullptr), block_sz(0), block_cap(0), sz(0) {}
 
-        ~veclist(){
+        ~tiered_vector(){
             for(size_t i = 0; i < block_sz; ++i){
                 delete[] pdata[i];
             }
@@ -53,7 +53,7 @@ class veclist{
                 delete [] pdata;
         }
 
-        veclist(const veclist& value){
+        tiered_vector(const tiered_vector& value){
             sz = value.sz;
             block_sz = value.block_sz;
             block_cap = value.block_cap;
@@ -76,7 +76,7 @@ class veclist{
             }
         }
 
-        void swap(veclist& other){
+        void swap(tiered_vector& other){
             if(pdata != internal_pdata && other.pdata != other.internal_pdata){
                 std::swap(pdata, other.pdata);
             }
@@ -107,12 +107,12 @@ class veclist{
             std::swap(block_cap, other.block_cap);
         }
 
-        veclist& operator= (veclist value){
+        tiered_vector& operator= (tiered_vector value){
             this-> swap(value);
             return *this;
         }
 
-        veclist(veclist && value) noexcept :
+        tiered_vector(tiered_vector && value) noexcept :
             pdata(value.pdata),
             block_sz(value.block_sz),
             block_cap(value.block_cap),
