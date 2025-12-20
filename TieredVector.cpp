@@ -158,6 +158,17 @@ class tiered_vector{
             }
         }
 
+        void reserve(size_t n){
+            if(n <= capacity()) return;
+
+            size_t needed_blocks = (n + 1023) >> 10;
+
+            size_t new_cap = block_cap == 0 ? 8 : block_cap;
+            while(new_cap < needed_blocks) new_cap <<= 1;
+
+            reallocate(new_cap);
+        }
+
         void resize(size_t new_size){
             if(new_size == sz) return;
 

@@ -1,4 +1,3 @@
-//source: gemini
 #include <iostream>
 #include <vector>
 #include <deque>
@@ -14,9 +13,6 @@
 using namespace std;
 using namespace cppx;
 #define endl "\n"
-// =========================================================
-// 2. SYSTEM METRICS (Linux Specific)
-// =========================================================
 
 // Reads Current Resident Set Size (RSS) in Bytes
 // Accurate to the page level (4KB)
@@ -42,14 +38,11 @@ public:
     }
 };
 
-// =========================================================
-// 3. BENCHMARK SUITE
-// =========================================================
 
 struct Result {
     double push_ms;
-    double seq_ms;  // Sequential Read (Prefetching test)
-    double rnd_ms;  // Random Read (Latency test)
+    double seq_ms;  // Sequential Read
+    double rnd_ms;  // Random Read
     size_t mem_bytes;
 };
 
@@ -87,7 +80,6 @@ Result run_test(size_t N) {
     // Access 10% of elements (capped at 5M ops) randomly
     size_t ops = std::min(N, (size_t)5000000);
     // Linear Congruential Generator for fast, deterministic randomness
-    // (std::mt19937 is too slow and becomes the bottleneck itself)
     size_t idx = 0;
     t.reset();
     for(size_t i = 0; i < ops; ++i) {
@@ -100,9 +92,6 @@ Result run_test(size_t N) {
     return {t_push, t_seq, t_rnd, mem_used};
 }
 
-// =========================================================
-// 4. REPORTING
-// =========================================================
 
 void print_header() {
     cout << string(115, '-') << endl;
