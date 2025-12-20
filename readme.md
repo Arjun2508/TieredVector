@@ -4,7 +4,9 @@ The tiered_vector is a fun C++ container I made to eliminate(try to) the perform
 
 It acts as a direct drop-in replacement for std::vector where copy-on-resize costs are prohibitive, or std::deque where iteration speed is insufficient.
 
+NOTE:
 NOT A REPLACEMENT FOR VECTOR
+
 Vector is still king, but this fun project i made seems to out-perform vector in certain use cases, which are commonly observed.
 
 
