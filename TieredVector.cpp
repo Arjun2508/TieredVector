@@ -3,6 +3,56 @@ using namespace std;
 
 template <typename T>
 class tiered_vector{
+    public:
+        template <bool is_const>
+        class TieredVectorIterator{
+            public:
+                using iterator_category      = std::random_access_iterator_tag;
+                using difference_type        = std::ptrdiff_t;
+                using value_type             = T;
+                using pointer                = std::conditional_t<is_const, const T*, T*>;
+                using reference              = std::conditional_t<is_const, const T&, T&>;
+                using parent_type            = std::conditional_t<is_const, const tiered_vector*, tiered_vector*>;
+                using reverse_iterator       = std::reverse_iterator<TieredVectorIterator>;
+                using const_reverse_iterator = std::reverse_iterator<const TieredVectorIterator>;
+
+            private:
+                parent_type parent;
+                size_t idx;
+
+            public:
+                TieredVectorIterator(parent_type v, size_t i) : parent(v), idx(i) {}
+
+                reference operator*() const {return (*parent)[idx];}
+                pointer operator->() const {return &(*parent)[idx];}
+
+                TieredVectorIterator& operator++(){++idx; return *this;}
+                TieredVectorIterator operator++(int){TieredVectorIterator tmp = *this; ++(*this); return tmp;}
+                TieredVectorIterator& operator--(){--idx; return *this;}
+                TieredVectorIterator operator--(int){TieredVectorIterator tmp = *this; --(*this); return tmp;}
+
+                TieredVectorIterator& operator+=(difference_type incr){idx += incr; return *this;}
+                TieredVectorIterator& operator-=(difference_type incr){idx -= incr; return *this;}
+
+                friend TieredVectorIterator operator+(TieredVectorIterator it, difference_type incr){return TieredVectorIterator(it.parent, it.idx + incr);}
+                friend TieredVectorIterator operator+(difference_type incr, TieredVectorIterator it){return TieredVectorIterator(it.parent, it.idx + incr);}
+                friend TieredVectorIterator operator-(TieredVectorIterator it, difference_type incr){return TieredVectorIterator(it.parent, it.idx - incr);}
+                friend TieredVectorIterator operator-(difference_type incr, TieredVectorIterator it){return TieredVectorIterator(it.parent, it.idx - incr);}
+
+                friend difference_type operator-(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx - b.idx;}
+                friend difference_type operator+(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx + b.idx;}
+                
+                bool operator==(const TieredVectorIterator& other){return idx == other.idx;}
+                bool operator!=(const TieredVectorIterator& other){return idx != other.idx;}
+                bool operator<(const TieredVectorIterator& other){return idx < other.idx;}
+                bool operator<=(const TieredVectorIterator& other){return idx <= other.idx;}
+                bool operator>(const TieredVectorIterator& other){return idx > other.idx;}
+                bool operator>=(const TieredVectorIterator& other){return idx >= other.idx;}
+
+                reference operator[](difference_type incr) const {return *(*this + incr);};
+
+                
+        };
     private:
         T** pdata;
         T* internal_pdata[8];
@@ -43,6 +93,12 @@ class tiered_vector{
         }
 
     public:
+
+        using iterator = TieredVectorIterator<false>;
+        using const_iterator = TieredVectorIterator<true>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
         tiered_vector() : pdata(nullptr), block_sz(0), block_cap(0), sz(0) {}
 
         ~tiered_vector(){
@@ -51,6 +107,13 @@ class tiered_vector{
             }
             if(pdata != internal_pdata && pdata != nullptr)
                 delete [] pdata;
+        }
+
+        tiered_vector(initializer_list<T> value) : tiered_vector(){
+            reserve(value.size());
+            for(auto & item : value){
+                push_back(item);
+            }
         }
 
         tiered_vector(const tiered_vector& value){
@@ -204,6 +267,16 @@ class tiered_vector{
         const T& operator[](size_t idx) const {
             return pdata[idx>>10][idx&1023];
         }
+
+        iterator begin() {return iterator(this, 0);}
+        iterator end() {return iterator(this, sz);}
+        reverse_iterator rbegin() {return reverse_iterator(end());}
+        reverse_iterator rend() {return reverse_iterator(begin());}
+
+        const_iterator begin() const {return const_iterator(this, 0);}
+        const_iterator end() const {return const_iterator(this, sz);}
+        const_reverse_iterator rbegin() const {return const_reverse_iterator(end());}
+        const_reverse_iterator rend() const {return const_reverse_iterator(begin());}
 
         size_t size() const {return this->sz;}
         size_t capacity() const {return this->block_cap<<10;}

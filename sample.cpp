@@ -70,6 +70,40 @@ int main() {
 
     cout << endl;
 
+    //Iterator Test
+    cout << "Iterator Test: " << endl;
+    tiered_vector<int> iter_tv;
+    for (int i = 0; i < 20; ++i) {
+        iter_tv.push_back(i + 1);
+    }
+
+    for (auto it = iter_tv.begin(); it != iter_tv.end(); ++it) {
+        cout << *it << " ";
+    }
+
+    cout << endl;
+
+    for (auto it: iter_tv) {
+        cout << it << " ";
+    }
+
+    cout << endl;
+
+    //Recerse iterator test
+    cout << "Reverse Iterator Test: " << endl;
+    for (auto rit = iter_tv.rbegin(); rit != iter_tv.rend(); ++rit) {
+        cout << *rit << " ";
+    }
+    cout << endl;
+
+    //sorting test
+    cout << "Sorting Test: " << endl;
+    tiered_vector<int> sort_tv = {5, 3, 8, 1, 2, 7, 4, 6};
+    sort(sort_tv.begin(), sort_tv.end());
+    for (auto& val : sort_tv) {
+        cout << val << " ";
+    }
+    cout << endl;
 
     cout << "-----------END OF TEST-----------" << endl;
 
