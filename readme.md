@@ -17,7 +17,7 @@ It can act as a drop-in replacement for `std::vector` when copy-on-resize costs 
 
 ## Performance benchmarks
 
-1) general_benchmark.cpp:
+### 1) general_benchmark.cpp:
 
 Context: 
 - A high level overview comparing the three major operations: push_back, reading sequentially, random access and bytes/element
@@ -71,7 +71,7 @@ Expected Observation and Reason:
         65000000    deque               1395.2      1592.0      127.6       258.34        4.17           
         65000000    vector              1590.1      112.7       18.3        278.83        4.50
 
-2) speed_benchmark.cpp:
+### 2) speed_benchmark.cpp:
 
 Context: 
 - Aims to calculate micro-level bench marks, in two modes.. initially unreserved vs initially reserved.
@@ -132,7 +132,7 @@ Expected Observation and Reason:
         10000000       0.50245           1.19925           0.52536           Vector (Close) 
         73000000       4.60984           11.60753          5.10716           Vector
 
-3) memory_benchmark.cpp
+### 3) memory_benchmark.cpp
 
 Context: 
 - Measures wasted memory, i.e. memory allocated, but not containing user data
@@ -165,7 +165,7 @@ Expected Observation and Reason:
         36500000    512.0MB (73%)            141.4MB (2%)             140.2MB (0%)             
 
 
-4) wr_multithreaded.cpp
+### 4) wr_multithreaded.cpp
 
 Context:
 - The "killer feature" of this data structure. 16 threads attempting to write/read random indices simultaneously.
