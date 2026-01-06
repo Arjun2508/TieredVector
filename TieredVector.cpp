@@ -41,13 +41,13 @@ class tiered_vector{
 
                 friend difference_type operator-(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx - b.idx;}
                 friend difference_type operator+(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx + b.idx;}
-                
-                bool operator==(const TieredVectorIterator& other){return idx == other.idx;}
-                bool operator!=(const TieredVectorIterator& other){return idx != other.idx;}
-                bool operator<(const TieredVectorIterator& other){return idx < other.idx;}
-                bool operator<=(const TieredVectorIterator& other){return idx <= other.idx;}
-                bool operator>(const TieredVectorIterator& other){return idx > other.idx;}
-                bool operator>=(const TieredVectorIterator& other){return idx >= other.idx;}
+
+                friend bool operator==(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx == b.idx;}
+                friend bool operator!=(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx != b.idx;}
+                friend bool operator<(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx < b.idx;}
+                friend bool operator<=(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx <= b.idx;}
+                friend bool operator>(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx > b.idx;}
+                friend bool operator>=(const TieredVectorIterator& a, const TieredVectorIterator& b){return a.idx >= b.idx;}
 
                 reference operator[](difference_type incr) const {return *(*this + incr);};
 
