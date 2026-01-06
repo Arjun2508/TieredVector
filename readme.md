@@ -12,8 +12,32 @@ It can act as a drop-in replacement for `std::vector` when copy-on-resize costs 
 - This is NOT a replacement for `std::vector` in all cases - `std::vector` is preferable when contiguous storage is required.
 - `tiered_vector` can outperform `std::vector` in specific scenarios (see benchmarks below), particularly for heavy growth and reference-stability needs.
 
+## How It Works
 
+`tiered_vector` is a high performance, block based(segmented) container made to minimize the overhead of dynamic memory allocation, as found in `std::vector`.
 
+**1) Two-Tiered Memory Strucutre**
+
+Unlike `std::vector`, which stores all elements in a single contiguous block, this container uses a tiered memory approach.
+- Tier 1: An array of pointers pointing to fixed array sizes of 1024 elements(T** pdata).
+- Tier 2: Fixed size arrays of 1024 elements each.
+- Indexing: Elements are accessed using bitwise operators for maximum speed. For index `i`, block is located at `i >> 10` and offset within a block is calculated as `i & 1023`.
+
+**2) Small Buffer Optimization (SBO)**
+To avoid heap allocations for smaller datasets, the container includes an internal array.
+- `internal_pdata[8]`: If the container needs 8 or fewer blocks, it uses this stack-allocated pointer array instead of allocating a directory on heap. This makes it faster for smaller-medium test cases.
+
+**3) Allocation Strategy and Performance**
+- **Alloc/Realloc Strategy:** When the container grows, if the block capacity is enough, it allocates a new block after the previous 1024 element block is filled. It never directly allocates the pointer with 1024 arrays unless the resize function is called. If there is not enough blocks, the same reallocation strategy of `std::vector` is applied for the pointer array, where only the pointers get reallocated, not the elements or the array itself.
+- **Memory Efficiency:** Because growth is incremental (1024 elements at a time), the container avoids over allocating memory by a huge overhead.
+- **Pointer Stability:** Since elements are never moved during reallocations, pointers and references to elements remain valid for the lifetime of the element. 
+
+**4) Hysteresis in pop_back**
+- This container has a different approach to shrinking. When pop_back is called in a typical vector implementation, it resizes the size, but the capacity is never reduced, leaving large amounts of memory.
+
+- `tiered_vector` implements a Hysterisis like behaviour to balance memomry usage and performance. When a block becomes empty by calling pop_back, instead of deleting the block the instant it becomes empty, it waits till more than one full block is empty, then it delets the array in the pointer.
+
+- THis one block buffer prevents repeated allocation and destruction of blocks when a user calls push_back and pop_back repeatedly at the boundary of a block. 
 
 ## Performance benchmarks
 
@@ -23,18 +47,18 @@ It can act as a drop-in replacement for `std::vector` when copy-on-resize costs 
 - A high level overview comparing the three major operations: push_back, reading sequentially, random access and bytes/element
 
 **The Mechanism:**
-- std::vector uses a single contiguous block of memory. When it is full, it allocates a new block 2x the size, copies everything and deletes the old block
+- `std::vector` uses a single contiguous block of memory. When it is full, it allocates a new block 2x the size, copies everything and deletes the old block
 
-- std::deque uses a map of pointers to small fixed-size arrays. It never copies existing elements, but the arrays are often small, leading to frequent allocations and cache misses.
+- `std::deque` uses a map of pointers to small fixed-size arrays. It never copies existing elements, but the arrays are often small, leading to frequent allocations and cache misses.
 
 - tiered_vector uses an array of pointers pointing to moderate-large sized data chunks, size in the power of two. When full, it adds new chunks, never moves existing data.
 
 Expected Observation and Reason:
-- push_back (no reserving memory initially) - tiered_vector dominates, and the reason is because no reallocation/copy of large amounts of data happens. std::deque loses here due to high allocator pressure
+- push_back (no reserving memory initially) - tiered_vector dominates, and the reason is because no reallocation/copy of large amounts of data happens. `std::deque` loses here due to high allocator pressure
 
-- seq_scan - std::vector wins, but tiered_vector is competitive. vector is a single block, allowing the CPU prefetcher to predict 100% of the memory accesses. tiered_vector introduces a hop every 1024 elements, which is a negligible penalty compared to std:deque's penalty
+- seq_scan - `std::vector` wins, but tiered_vector is competitive. vector is a single block, allowing the CPU prefetcher to predict 100% of the memory accesses. tiered_vector introduces a hop every 1024 elements, which is a negligible penalty compared to `std:deque`'s penalty
 
-- random_access - std::vector wins, but tiered_vector is very competitive. The reason vector wins is simply because there is lesser math to do, compared to tiered_vector, which has two dereferences. The reason deque loses is because of more cache misses.
+- random_access - `std::vector` wins, but tiered_vector is very competitive. The reason vector wins is simply because there is lesser math to do, compared to tiered_vector, which has two dereferences. The reason deque loses is because of more cache misses.
 
         -------------------------------------------------------------------------------------------------------------------
         Count       Type                Push(ms)    SeqScan(ms) RndAcc(ms)  Total(MB)     Bytes/Elem     
@@ -138,7 +162,7 @@ Expected Observation and Reason:
 - Measures wasted memory, i.e. memory allocated, but not containing user data
 
 **Mechanism:**
-- std::vector as discussed earlier, reallocates n to 2*n blocks, wasting memory and creating an overhead, for a major boost in speed.
+- `std::vector` as discussed earlier, reallocates n to 2*n blocks, wasting memory and creating an overhead, for a major boost in speed.
 
 - tiered_vector Allocates fixed_size chunks. If a chunk holds 1024 items, waste is never more than 1023 items, regardless of the total size, if assumed to push_back sequentially.
 
@@ -172,7 +196,7 @@ Expected Observation and Reason:
 - Have not implemented thread safety in tiered_vector yet, so we will be dealing with w/r operations for now
 
 **Mechanism:**
-- Global Locking (Vector): Because std::vector might resize and move memory, pointer reference is lost during realloc, and hence it enforces serial execution (global lock).
+- Global Locking (Vector): Because `std::vector` might resize and move memory, pointer reference is lost during realloc, and hence it enforces serial execution (global lock).
 
 - Segmented Locking (Tiered_Vector): Because tiered_vector guarantess reference stability, we can use mutex per chunk. Thread A writing to Chunk 1 does not block Thread B writing to Chunk 2.
 
