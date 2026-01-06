@@ -1,18 +1,21 @@
-Tiered Vector (tiered_vector): A high-performance hybrid container combining the speed of std::vector with the stability of std::deque.
 
-The tiered_vector is a fun C++ container I made to eliminate(try to) the performance cliffs and memory inefficiencies inherent in standard library containers when dealing with massive datasets, high-concurrency environments, or uncertain growth patterns.
+# Tiered Vector (tiered_vector)
 
-It acts as a direct drop-in replacement for std::vector where copy-on-resize costs are prohibitive, or std::deque where iteration speed is insufficient.
+A high-performance hybrid container combining the speed of `std::vector` with the stability of `std::deque`.
 
-NOTE:
-NOT A REPLACEMENT FOR VECTOR
+The `tiered_vector` is a C++ container designed to reduce performance cliffs and memory inefficiencies when working with very large datasets, high-concurrency workloads, or unpredictable growth patterns.
 
-Vector is still king, but this fun project i made seems to out-perform vector in certain use cases, which are commonly observed.
+It can act as a drop-in replacement for `std::vector` when copy-on-resize costs are prohibitive, or for `std::deque` when iteration speed matters.
+
+## Note
+
+- This is NOT a replacement for `std::vector` in all cases — `std::vector` is preferable when contiguous storage is required.
+- `tiered_vector` can outperform `std::vector` in specific scenarios (see benchmarks below), particularly for heavy growth and reference-stability needs.
 
 
 
 
------------------------------------ PERFORMANCE BENCHMARKS -----------------------------------
+## Performance benchmarks
 
 1) general_benchmark.cpp:
 
