@@ -9,7 +9,7 @@ It can act as a drop-in replacement for `std::vector` when copy-on-resize costs 
 
 ## Note
 
-- This is NOT a replacement for `std::vector` in all cases — `std::vector` is preferable when contiguous storage is required.
+- This is NOT a replacement for `std::vector` in all cases - `std::vector` is preferable when contiguous storage is required.
 - `tiered_vector` can outperform `std::vector` in specific scenarios (see benchmarks below), particularly for heavy growth and reference-stability needs.
 
 
@@ -20,21 +20,21 @@ It can act as a drop-in replacement for `std::vector` when copy-on-resize costs 
 1) general_benchmark.cpp:
 
 Context: 
-    A high level overview comparing the three major operations: push_back, reading sequentially, random access and bytes/element
+- A high level overview comparing the three major operations: push_back, reading sequentially, random access and bytes/element
 
 The Mechanism: 
-    std::vector uses a single contiguous block of memory. When it is full, it allocates a new block 2x the size, copies everything and deletes the old block
+- std::vector uses a single contiguous block of memory. When it is full, it allocates a new block 2x the size, copies everything and deletes the old block
 
-    std::deque uses a map of pointers to small fixed-size arrays. It never copies existing elements, but the arrays are often small, leading to frequent allocations and cache misses.
+- std::deque uses a map of pointers to small fixed-size arrays. It never copies existing elements, but the arrays are often small, leading to frequent allocations and cache misses.
 
-    tiered_vector uses an array of pointers pointing to moderate-large sized data chunks, size in the power of two. When full, it adds new chunks, never moves existing data.
+- tiered_vector uses an array of pointers pointing to moderate-large sized data chunks, size in the power of two. When full, it adds new chunks, never moves existing data.
 
 Expected Observation and Reason:
-    push_back (no reserving memory initially) - tiered_vector dominates, and the reason is because no reallocation/copy of large amounts of data happens. std::deque loses here due to high allocator pressure
+- push_back (no reserving memory initially) - tiered_vector dominates, and the reason is because no reallocation/copy of large amounts of data happens. std::deque loses here due to high allocator pressure
 
-    seq_scan - std::vector wins, but tiered_vector is competitive. vector is a single block, allowing the CPU prefetcher to predict 100% of the memory accesses. tiered_vector introduces a hop every 1024 elements, which is a negligible penalty compared to std:deque's penalty
+- seq_scan - std::vector wins, but tiered_vector is competitive. vector is a single block, allowing the CPU prefetcher to predict 100% of the memory accesses. tiered_vector introduces a hop every 1024 elements, which is a negligible penalty compared to std:deque's penalty
 
-    random_access - std::vector wins, but tiered_vector is very competitive. The reason vector wins is simply because there is lesser math to do, compared to tiered_vector, which has two dereferences. The reason deque loses is because of more cache misses.
+- random_access - std::vector wins, but tiered_vector is very competitive. The reason vector wins is simply because there is lesser math to do, compared to tiered_vector, which has two dereferences. The reason deque loses is because of more cache misses.
 
         -------------------------------------------------------------------------------------------------------------------
         Count       Type                Push(ms)    SeqScan(ms) RndAcc(ms)  Total(MB)     Bytes/Elem     
@@ -74,15 +74,15 @@ Expected Observation and Reason:
 2) speed_benchmark.cpp:
 
 Context: 
-    Aims to calculate micro-level bench marks, in two modes.. initially unreserved vs initially reserved.
+- Aims to calculate micro-level bench marks, in two modes.. initially unreserved vs initially reserved.
 
 The Mechanism:
-    Simulates both unreserved and reserved growth. If the memory is initially reserved, no reallocation happens in a vector, which is the ideal case we assume.
+- Simulates both unreserved and reserved growth. If the memory is initially reserved, no reallocation happens in a vector, which is the ideal case we assume.
 
 Expected Observation and Reason:
-    Unreserved Growth - tiered_vector wins for push_back operation, for reasons discussed earlier
+- Unreserved Growth - tiered_vector wins for push_back operation, for reasons discussed earlier
 
-    Reserved Growth - vector is king in all aspects, because no reallocation of elements happen at any time. In this case, it just pretty much behaves as fast as an array, approaching the RAM limit.. 
+- Reserved Growth - vector is king in all aspects, because no reallocation of elements happen at any time. In this case, it just pretty much behaves as fast as an array, approaching the RAM limit.. 
 
         ========================================================================================
         BENCHMARK: UNRESERVED GROWTH (push_back)
@@ -135,17 +135,17 @@ Expected Observation and Reason:
 3) memory_benchmark.cpp
 
 Context: 
-    Measures wasted memory, i.e. memory allocated, but not containing user data
+- Measures wasted memory, i.e. memory allocated, but not containing user data
 
 Mechanism: 
-    std::vector as discussed earlier, reallocates n to 2*n blocks, wasting memory and creating an overhead, for a major boost in speed.
+- std::vector as discussed earlier, reallocates n to 2*n blocks, wasting memory and creating an overhead, for a major boost in speed.
 
-    tiered_vector Allocates fixed_size chunks. If a chunk holds 1024 items, waste is never more than 1023 items, regardless of the total size, if assumed to push_back sequentially.
+- tiered_vector Allocates fixed_size chunks. If a chunk holds 1024 items, waste is never more than 1023 items, regardless of the total size, if assumed to push_back sequentially.
 
-    Waste becomes 1023 elements per block at worst case scenario, if not assumed to push_back sequentially by reserving the pointers initially.
+- Waste becomes 1023 elements per block at worst case scenario, if not assumed to push_back sequentially by reserving the pointers initially.
 
 Expected Observation and Reason:
-    pretty trivial... tiered_vector and deque has minimal waste, while vector has a huge overhead as n scales.
+- pretty trivial... tiered_vector and deque has minimal waste, while vector has a huge overhead as n scales.
 
         ==========================================================================================
         Elements    std::vector (Waste %)    std::deque (Waste %)     TieredVec (Waste %)      
@@ -165,19 +165,19 @@ Expected Observation and Reason:
         36500000    512.0MB (73%)            141.4MB (2%)             140.2MB (0%)             
 
 
-4)wr_multithreaded.cpp
+4) wr_multithreaded.cpp
 
 Context:
-    The "killer feature" of this data structure. 16 threads attempting to write/read random indices simultaneously.
-    Have not implemented thread safety in tiered_vector yet, so we will be dealing with w/r operations for now
+- The "killer feature" of this data structure. 16 threads attempting to write/read random indices simultaneously.
+- Have not implemented thread safety in tiered_vector yet, so we will be dealing with w/r operations for now
 
 Mechanism: 
-    Global Locking (Vector): Because std::vector might resize and move memory, pointer reference is lost during realloc, and hence it enforces serial execution (global lock).
+- Global Locking (Vector): Because std::vector might resize and move memory, pointer reference is lost during realloc, and hence it enforces serial execution (global lock).
 
-    Segmented Locking (Tiered_Vector): Because tiered_vector guarantess reference stability, we can use mutex per chunk. Thread A writing to Chunk 1 does not block Thread B writing to Chunk 2.
+- Segmented Locking (Tiered_Vector): Because tiered_vector guarantess reference stability, we can use mutex per chunk. Thread A writing to Chunk 1 does not block Thread B writing to Chunk 2.
 
 Expected Observation and Reason:
-    Tiered vector is effectively running in parallel in the average case (16 threads working at once in the best case). This makes tiered_vector terribly more efficient for this nieche case scenario.
+- Tiered vector is effectively running in parallel in the average case (16 threads working at once in the best case). This makes tiered_vector terribly more efficient for this nieche case scenario.
 
         =============================================================
         LOCK GRANULARITY SHOWDOWN (16 Threads, 50M Random Writes)
