@@ -192,7 +192,7 @@ class tiered_vector{
         }
 
         void push_back(const T& value){
-            if((sz&1023) == 0){
+            if((sz >> 10) >= block_sz){
                 initNextSubArray();
             }
             pdata[sz>>10][sz&1023] = value;
@@ -200,7 +200,7 @@ class tiered_vector{
         }
 
         void push_back(T&& value){
-            if((sz&1023) == 0){
+            if((sz >> 10) >= block_sz){
                 initNextSubArray();
             }
             pdata[sz>>10][sz&1023] = move(value);
